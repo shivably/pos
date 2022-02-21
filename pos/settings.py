@@ -71,7 +71,7 @@ TEMPLATES = [
         },
     },
 ]
-
+DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 WSGI_APPLICATION = 'pos.wsgi.application'
 
 
