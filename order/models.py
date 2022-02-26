@@ -31,6 +31,9 @@ class Order(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def get_status(self):
+        return self.is_paid
+
     def save(self, *args, **kwargs):
         order_items = self.order_items.all()
         self.value = order_items.aggregate(Sum('total_price'))['total_price__sum'] if order_items.exists() else 0.00

@@ -1,12 +1,14 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.views.generic.base import TemplateView
 from django.contrib.auth.views import LogoutView
 
 from order.views import (HomepageView, OrderUpdateView, CreateOrderView, delete_order,
                          OrderListView, done_order_view, auto_create_order_view,
-                         ajax_add_product, ajax_modify_order_item, ajax_search_products, ajax_calculate_results_view,
-                         order_action_view, ajax_calculate_category_view
+                         ajax_add_product, ajax_modify_order_item, ajax_search_products, ajax_calculate_results_view, generate_PDF,
+                         order_action_view, ajax_calculate_category_view,
+
+                         InvoiceListView, invoice_detail, generate_PDF
                          )
 
 urlpatterns = [
@@ -29,5 +31,14 @@ urlpatterns = [
     path('ajax/modify-product/<int:pk>/<slug:action>', ajax_modify_order_item, name='ajax_modify'),
     path('ajax/calculate-results/', ajax_calculate_results_view, name='ajax_calculate_result'),
     path('ajax/calculate-category-results/', ajax_calculate_category_view, name='ajax_category_result'),
+
+
+    path('invoice-list/', InvoiceListView.as_view(), name="invoice-list"),
+    path('invoice-create/', InvoiceListView.as_view(), name="invoice-create"),
+    path('invoice-detail/<id>', invoice_detail, name='invoice-detail'),
+    path('invoice-download/<id>', generate_PDF, name='invoice-download'),
+
+    # APIS
+    path('api/v1/auth/', include('rest_framework.urls'))
 
 ]

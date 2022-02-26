@@ -1,17 +1,20 @@
 from django.views.generic import ListView, CreateView, UpdateView
 from django.utils.decorators import method_decorator
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, redirect, reverse
+from django.shortcuts import get_object_or_404, redirect, reverse, render
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.template.loader import render_to_string
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 from django_tables2 import RequestConfig
 from .models import Order, OrderItem, CURRENCY
 from .forms import OrderCreateForm, OrderEditForm
 from product.models import Product, Category
 from .tables import ProductTable, OrderItemTable, OrderTable
+from django.views import View
+
+import pdfkit
 
 import datetime
 
@@ -243,3 +246,59 @@ def ajax_calculate_category_view(request):
                                       context=locals()
                                       )
     return JsonResponse(data)
+
+
+class InvoiceListView(View):
+    def get(self, *args, **kwargs):
+        invoices = Order.objects.all()
+        context = {
+            "invoices":invoices,
+        }
+
+        return render(self.request, 'invoice/invoice-list.html', context)
+
+    def post(self, request):        
+        invoice_ids = request.POST.getlist("invoice_id")
+        invoice_ids = list(map(int, invoice_ids))
+
+        update_status_for_invoices = int(request.POST['status'])
+        invoices = Order.objects.filter(id__in=invoice_ids)
+        if update_status_for_invoices == 0:
+            invoices.update(is_paid=False)
+        else:
+            invoices.update(is_paid=True)
+        return redirect('invoice-list')
+
+
+def invoice_detail(request, id=None):
+    invoice = get_object_or_404(Order, id=id)
+    lineitem = invoice.order_items.all()
+
+    context = {
+        "company": {
+            "name": "SSS Services",
+            "address" :"Car Street",
+            "phone": "(988) XXX XXXX",
+            "email": "contact@contact.com",
+        },
+        "invoice_id": invoice.id,
+        "invoice_total": invoice.final_value,
+        "customer": invoice.title,
+        "customer_email": invoice.title,
+        "date": invoice.date,
+        "due_date": invoice.date,
+        "billing_address": invoice.title,
+        "message": invoice.title,
+        "lineitem": lineitem,
+
+    }
+    return render(request, 'invoice/details.html', context)
+
+
+def generate_PDF(request, id):
+    # Use False instead of output path to save pdf to a variable
+    pdf = pdfkit.from_url(request.build_absolute_uri(reverse('invoice-detail', args=[id])), False)
+    response = HttpResponse(pdf,content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="invoice.pdf"'
+
+    return 
